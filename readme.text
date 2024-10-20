@@ -11,3 +11,10 @@ uske baad index file bana kr text kr skkte h
 
 =========================================================================
 
+Install Krne ke liye
+
+npm install 
+
+And e-com database bana krke 
+
+products and user collections h , or hit krna h postman se database me fields create ho jayega
