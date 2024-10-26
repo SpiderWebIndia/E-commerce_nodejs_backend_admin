@@ -6,6 +6,7 @@ const app = express();
 // Import the routers from ProductApi and UserApi
 const productRoutes = require('./ProductApi');
 const userRoutes = require('./UserApi');
+const categoryRoutes = require('./CategoryApi');
 
 // Middleware setup
 app.use(express.json());
@@ -14,6 +15,7 @@ app.use(cors());
 // Register the routes
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/categorys', categoryRoutes);
 
 // Start the server
 const PORT = 8000;

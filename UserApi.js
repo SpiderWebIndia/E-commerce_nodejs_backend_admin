@@ -47,7 +47,7 @@ router.post('/LoginApi', async (req, resp) => {
     try {
         let user = await User.findOne({ email });
         if (user && user.password === password) {
-            const token = jwt.sign({ userId: user._id, email: user.email }, SECRET_KEY, { expiresIn: '1h' });
+            const token = jwt.sign({ userId: user._id, email: user.email }, SECRET_KEY, { expiresIn: '13h' });
             resp.status(200).send({
                 message: "Login successful",
                 status: true,

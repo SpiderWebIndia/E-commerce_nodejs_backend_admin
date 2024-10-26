@@ -11,3 +11,21 @@ uske baad index file bana kr text kr skkte h
 
 =========================================================================
 
+
+
+1. To run the applications 
+ 
+  nodemon ./index.js
+
+2. To  run the test cases 
+
+  npm test
+
+3. When you want to run test cases timeout 
+
+"scripts": {
+    "test": "jest --testTimeout=10000"
+}
+npx jest --testTimeout=10000
+
+npm test
