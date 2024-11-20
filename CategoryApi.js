@@ -90,7 +90,6 @@ router.delete('/CategoryDelete/:id', authenticateToken, async (req, res) => {
     }
 
     try {
-
         const categorySoftDelte = await CategorySchema.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
         if (categorySoftDelte) {
             res.status(200).send({

@@ -7,6 +7,7 @@ const app = express();
 const productRoutes = require('./ProductApi');
 const userRoutes = require('./UserApi');
 const categoryRoutes = require('./CategoryApi');
+const brandRoutes = require('./BrandApi');
 
 // Middleware setup
 app.use(express.json());
@@ -16,6 +17,7 @@ app.use(cors());
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categorys', categoryRoutes);
+app.use('/api/brand', brandRoutes);
 
 // Start the server
 const PORT = 8000;
