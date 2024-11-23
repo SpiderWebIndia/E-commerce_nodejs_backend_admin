@@ -1,7 +1,9 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('./Schema/User'); // MongoDB model for users
-const SECRET_KEY = 'tinkukumar.arena@gmail.com'; // Your secret key for JWT
+require('dotenv').config(); // Load environment variables
+
+const SECRET_KEY = process.env.JWT_SECRET || 'tinkukumar.arena@gmail.com'; // Load secret key from environment variables
 const router = express.Router();
 
 router.use(express.json());
