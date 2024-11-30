@@ -1,5 +1,8 @@
 const express = require('express');
 const mongodb = require('mongodb');
+const fs = require('fs');
+const multer = require('multer');
+const path = require('path');
 const authenticateToken = require('./middleware/authenticateToken');
 const ProductAdd = require('./Schema/Products'); // MongoDB model for products
 const router = express.Router();
@@ -7,16 +10,52 @@ const ObjectId = mongodb.ObjectId;
 
 router.use(express.json());
 
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); // Set the directory for storing images
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`); // Generate unique file name
+    },
+});
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        const fileTypes = /jpeg|jpg|png/;
+        const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimeType = fileTypes.test(file.mimetype);
+        if (extname && mimeType) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only images are allowed (jpeg, jpg, png).'));
+        }
+    },
+});
+
+// Helper function to delete file
+const deleteFile = (filePath) => {
+    if (filePath) {
+        fs.unlink(filePath, (err) => {
+            if (err) console.error("Failed to delete file:", err);
+        });
+    }
+};
+
 // Add a new product
-router.post('/ProductAdd', authenticateToken, async (req, resp) => {
+router.post('/ProductAdd', authenticateToken, upload.single('image'), async (req, resp) => {
     const { name } = req.body;
     try {
         let existingData = await ProductAdd.findOne({ name });
         if (existingData) {
+            deleteFile(req.file?.path);
             resp.status(400).send({ message: "Duplicate Product. This Product already exists.", data: existingData });
         } else {
-            let ProductData = new ProductAdd(req.body);
-            let result = await ProductData.save();
+            // let ProductData = new ProductAdd(req.body);
+            const newProduct = new ProductAdd({
+                ...req.body,
+                image: req.file ? req.file.path : null, // Store image path
+            });
+            let result = await newProduct.save();
             resp.status(201).send({
                 message: "Product inserted successfully",
                 status: true,
@@ -24,6 +63,7 @@ router.post('/ProductAdd', authenticateToken, async (req, resp) => {
             });
         }
     } catch (error) {
+        deleteFile(req.file?.path);
         console.error("Error occurred:", error);
         resp.status(500).send("Internal Server Error");
     }
@@ -102,7 +142,7 @@ router.get('/productGetById/:id', authenticateToken, async (req, res) => {
 });
 
 // Update a product
-router.put('/ProductUpdate/:id', authenticateToken, async (req, res) => {
+router.put('/ProductUpdate/:id', authenticateToken, upload.single('image'), async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
     try {
@@ -120,6 +160,7 @@ router.put('/ProductUpdate/:id', authenticateToken, async (req, res) => {
             });
         }
     } catch (error) {
+        deleteFile(req.file?.path);
         console.error("Error updating product:", error);
         res.status(500).send({
             message: "Error updating product",

@@ -1,5 +1,8 @@
 const express = require('express');
 const mongodb = require('mongodb');
+const fs = require('fs');
+const multer = require('multer');
+const path = require('path');
 const authenticateToken = require('./middleware/authenticateToken');
 const CategorySchema = require('./Schema/Category'); // MongoDB model for products
 const router = express.Router();
@@ -8,16 +11,54 @@ const ObjectId = mongodb.ObjectId;
 router.use(express.json());
 
 // Category Add
-router.post('/CategoryAdd', authenticateToken, async (req, resp) => {
+
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); // Set the directory for storing images
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`); // Generate unique file name
+    },
+});
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        const fileTypes = /jpeg|jpg|png/;
+        const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimeType = fileTypes.test(file.mimetype);
+        if (extname && mimeType) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only images are allowed (jpeg, jpg, png).'));
+        }
+    },
+});
+
+// Helper function to delete file
+const deleteFile = (filePath) => {
+    if (filePath) {
+        fs.unlink(filePath, (err) => {
+            if (err) console.error("Failed to delete file:", err);
+        });
+    }
+};
+
+router.post('/CategoryAdd', authenticateToken, upload.single('image'), async (req, resp) => {
 
     const { categoryName } = req.body;
     try {
         let existingData = await CategorySchema.findOne({ categoryName });
         if (existingData) {
+            deleteFile(req.file?.path);
             resp.status(400).send({ message: "Duplicate Category. This Category already exists.", data: existingData })
         } else {
-            let categoryData = new CategorySchema(req.body);
-            let result = await categoryData.save();
+            // let categoryData = new CategorySchema(req.body);
+            const newCategory = new CategorySchema({
+                ...req.body,
+                image: req.file ? req.file.path : null, // Store image path
+            });
+            let result = await newCategory.save();
             resp.status(201).send({
                 message: "Category inserted successfully",
                 status: true,
@@ -26,6 +67,7 @@ router.post('/CategoryAdd', authenticateToken, async (req, resp) => {
         }
     } catch (error) {
         // console.error("Error occurred:", error);
+        deleteFile(req.file?.path);
         resp.status(500).send("Internal Server Error");
     }
 });
@@ -116,7 +158,7 @@ router.delete('/CategoryDelete/:id', authenticateToken, async (req, res) => {
 
 // Update by Category
 
-router.put('/CategoryUpdate/:id', authenticateToken, async (req, resp) => {
+router.put('/CategoryUpdate/:id', authenticateToken, upload.single('image'), async (req, resp) => {
 
     const { id } = req.params;
     const updateDataCtgry = req.body;
@@ -136,6 +178,7 @@ router.put('/CategoryUpdate/:id', authenticateToken, async (req, resp) => {
         }
     } catch (error) {
         // console.error("Error updating category:", error);
+        deleteFile(req.file?.path);
         resp.status(500).send({
             message: "Error updating category",
             error: error.message,
